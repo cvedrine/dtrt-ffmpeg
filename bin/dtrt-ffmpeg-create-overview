@@ -1,0 +1,29 @@
+#! /bin/env zsh
+
+# TODO: probably mksh
+# TODO: probably in a lib
+
+use_slurm=false
+
+
+~/.dtrt-ffmpeg
+
+overview () {
+    $use_slurm && thumb=( slurm ffmpegthumbnailer )
+               || thumb=( ffmpegthumbnailer )
+
+    local wdir=$( mktemp -d strips.XXXXXXX )
+    local video=${1?name of the video} s= strips=
+    shift
+    for it; do
+        s=$wdir/$it.jpg
+        strips+=" $s"
+        $thumb -t $it -s 114:64 -c jpeg -i $video -o $s &
+    done
+    wait
+    montage $strips -tile $#x1 -geometry +0+0 overview.jpg
+    rm -rf $wdir
+}
+
+overview "$@"
+

@@ -1,0 +1,83 @@
+# TODO: the current output_template is insecure
+# (as a backtrick in it or in the file name can have remote code execution )
+# TODO: scale is a mock
+# don't really use arguements to decide everything
+
+use_slurm=false use_cuvid=false
+. ~/.ffdtrt
+
+alias @='for it'
+alias @-='while {read it}'
+setopt nounset warncreateglobal
+encoder=()
+
+available_sizes=(
+    320.240
+    720.480
+    1280.720
+    1920.1080
+)
+
+
+if {$use_cuvid} {
+    scaling_args () { encoder+=( -vf scale_nnp=$width\x$height ) }
+    encoder=( ffmpeg -hwaccel cuvid -c:v h264_cuvid )
+} else {
+    scaling_args () { encoder+=( -vf scale=$width\x$height ) }
+    encoder=( ffmpeg )
+}
+
+reads () { @ { typeset -g $it; read $it; } }
+
+video_size () {
+    ffprobe \
+        -v error -select_streams v -show_entries stream=width,height \
+        -of default=noprint_wrappers=1:nokey=1 ${1?path of the video}
+}
+
+# runner/slurm
+# pu/cuvid
+
+input () {
+    # setopt localoptions nowarncreateglobal
+    typeset -g input_{width,height} input=${1?path to the input video}
+    video_size $input | reads input_{width,height}
+    encoder+=( -i $input )
+}
+
+output () {
+    # setopt localoptions nowarncreateglobal
+    output_template=${1?template for the path of output file}
+}
+
+required_output () {
+    (( ( input_height != height )
+       && (( input_height > height )
+        || ( ( height - input_height ) < ( input_height * .1 ) ))))
+}
+
+scale () {
+    typeset -g width height output
+    @ ($available_sizes) {
+        width=${it:r} height=${it:e}
+        output="$( eval echo $output_template )"
+        required_output || continue
+        [[ -f $output && $output -nt $input ]] || {
+            scaling_args
+            encoder+=( $output )
+        }
+    }
+}
+
+encode () { $encoder &> LOG }
+
+template=${1?the template for output file}
+:        ${2?at least one video to encode}
+
+for doit {
+    input $doit
+    # ffprobe_dump_in out/info $input
+    output 'out/${input:t:r}_${width}x${height}.${input:e}'
+    scale always 240 downscale  upscale_almost '10%'
+    encode
+}

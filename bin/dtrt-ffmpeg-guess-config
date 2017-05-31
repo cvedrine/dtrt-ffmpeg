@@ -1,0 +1,34 @@
+#! /bin/env zsh
+
+# TODO: probably work with mksh
+# TODO: should be a library
+
+ffprobe_ls () {
+    ffprobe -v error -$1 |
+        sed '1,/^ ------$/d'
+}
+
+ffstream () {
+    ffprobe -v error -select_streams v:0 \
+        -show_entries stream=codec_name  \
+        -of default=noprint_wrappers=1:nokey=1 \
+        "$@"
+}
+
+ffprobe_names_only () { awk '{print $2}'; }
+
+ffprobe_names_of () { ffprobe_ls $1 | ffprobe_names_only ; }
+
+ffprobe_provides () {
+    local ctx=$1
+    shift 1
+    ffprobe_names_of $ctx |
+        grep "$@"
+}
+
+
+ffprobe_provides decoders cuvid && echo use_cuvid=true
+which srun 2> /dev/null         && echo use_slurm=true
+
+
+
