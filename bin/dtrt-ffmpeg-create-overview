@@ -1,12 +1,8 @@
 #! /bin/env zsh
-
 # TODO: probably mksh
 # TODO: probably in a lib
 
-use_slurm=false
-
-
-~/.dtrt-ffmpeg
+. dtrt-ffmpeg.zsh
 
 overview () {
     $use_slurm && thumb=( slurm ffmpegthumbnailer )
