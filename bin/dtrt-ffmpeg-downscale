@@ -5,7 +5,10 @@
 # don't really use arguements to decide everything
 # TODO: fallback when GPU fail (cuvid and nvenc)
 
-. ddrt-ffmpeg.zsh
+use_slurm=false use_cuvid=false
+output_template='${input:t:r}_${width}x${height}.${input:e}'
+
+. dtrt-ffmpeg.zsh
 
 encoder=()
 available_sizes=(
@@ -37,7 +40,8 @@ video_size () {
 input () {
     # setopt localoptions nowarncreateglobal
     typeset -g input_{width,height} input=${1?path to the input video}
-    video_size $input | reads input_{width,height}
+    video_size $input |
+        reads input_{width,height}
     encoder+=( -i $input )
 }
 
@@ -46,11 +50,12 @@ output () {
     output_template=${1?template for the path of output file}
 }
 
-upscale_almost () {
-    local tolerance=${1?a tolerence in decimal notation (aka .1 for 10%)}
-    (( ( input_height != height )
-       && (( input_height > height )
-        || ( ( height - input_height ) < ( input_height * tolerance ) ))))
+is_downscale () (( input_height > height ))
+
+is_upscale () {
+    local tolerance=${1?a tolerance in decimal notation (aka .1 for 10%)}
+    (( ( input_height > height ) &&
+       ( input_height - height ) < ( input_height * tolerance )))
 }
 
 scale () {
@@ -58,7 +63,11 @@ scale () {
     @ ($available_sizes) {
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
-        required_output || continue
+
+        is_downscale  ||
+        is_upscale .1 ||
+        continue
+
         [[ -f $output && $output -nt $input ]] || {
             scaling_args
             encoder+=( $output )
@@ -66,15 +75,16 @@ scale () {
     }
 }
 
-encode () { $encoder &> LOG }
+encode () { $encoder }
 
-template=${1?the template for output file}
-:        ${2?at least one video to encode}
+#template=${1?the template for output file}
+:        ${1?at least one video to encode}
+
 
 for doit {
     input $doit
     # ffprobe_dump_in out/info $input
-    output '${workdir}/${input:t:r}_${width}x${height}.${input:e}'
+    output '${input:t:r}_${width}x${height}.${input:e}'
     scale always 240 downscale  upscale_almost '10%'
     encode
 }
