@@ -1,7 +1,12 @@
-#! /bin/env zsh
+#! /usr/bin/env zsh
 
 # TODO: probably work with mksh
 # TODO: should be a library
+
+print -u2 "
+this test is *BAD*: ffmpeg comiled with good options doesn't mean
+the GPU is available"
+false; exit
 
 ffprobe_ls () {
     ffprobe -v error -$1 |
@@ -26,9 +31,10 @@ ffprobe_provides () {
         grep "$@"
 }
 
-
-ffprobe_provides decoders cuvid && echo use_cuvid=true
-which srun 2> /dev/null         && echo use_slurm=true
-
-
+# this test is *BAD*: ffmpeg comiled with good options doesn't mean
+# the GPU is available
+# ffprobe_provides decoders cuvid && echo use_cuvid=true
+#
+which srun &> /dev/null &&
+    echo use_slurm=true
 
