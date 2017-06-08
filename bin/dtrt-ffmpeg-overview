@@ -13,7 +13,7 @@ overview () {
         thumb=( slurm ffmpegthumbnailer ) ||
         thumb=( ffmpegthumbnailer )
     shift
-    (( $+1 )) || set {0..100}
+    (( $+1 )) || set {0..99}
     for it; do
         s=$wdir/$it.jpg
         strips+=$s
