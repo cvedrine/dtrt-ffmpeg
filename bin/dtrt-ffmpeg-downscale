@@ -26,7 +26,7 @@ $use_cuvid && {
     encoder=( ffmpeg -hwaccel cuvid -c:v h264_cuvid )
 }
 
-reads () { @ { typeset -g $it; read $it; } }
+reads () { for it { typeset -g $it; read $it; } }
 
 video_size () {
     ffprobe \
@@ -60,7 +60,7 @@ is_upscale () {
 
 scale () {
     typeset -g width height output
-    @ ($available_sizes) {
+    for it ($available_sizes) {
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
 
