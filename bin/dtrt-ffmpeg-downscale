@@ -5,21 +5,9 @@
 # don't really use arguements to decide everything
 # TODO: fallback when GPU fail (cuvid and nvenc)
 
-use_slurm=false use_cuvid=false
-output_template='${input:t:r}_${width}x${height}.${input:e}'
-
 . dtrt-ffmpeg.zsh
 
-encoder=()
-available_sizes=(
-    320.240
-    720.480
-    1280.720
-    1920.1080
-)
-
 scaling_args () { encoder+=( -vf scale=$width\x$height ) }
-encoder=( ffmpeg )
 
 $use_cuvid && {
     scaling_args () { encoder+=( -vf scale_nnp=$width\x$height ) }
