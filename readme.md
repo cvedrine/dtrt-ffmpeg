@@ -47,3 +47,35 @@ is written using the POD format in the scripts themselves so please use `perldoc
     # -movflags faststart -y output.mp4 # obligation pour streamer (moove atoms au début du fichier)
     # -vf scale_npp=320:240 -movflags faststart $1_240p.mp4
 
+# ssh configuration (restricted shell)
+
+let's say i want to install ffmpod and you start with those lines in your `~/.ssh/config` file
+
+    host www
+    hostname www.example.com
+    user django
+
+    host hpc
+    hostname hpc.example.com
+    user django
+
+* django is running with django@www.example.com
+* ffmpod is running with ffmpod@hpc.example.com
+* your personnal keys are authorized for these 2 accounts
+
+    # get the server keys if it's your first connection
+    { for it ( hpc www ) ssh-keyscan -H $it } >> ~/.ssh/known_hosts
+
+    # generate a service key for your app
+    ssh-keygen -t ed25519 -N '' -C 'django@www' -f ffmpod
+
+    # install the key with a restricted shell on hpc
+
+    sed '/^ssh-/s/^/command="ffmpod" /' django.pub | ssh-copy-id -i hpc
+
+    # TODO: configure ssh to avoid execution of remote commands with this key
+    # good start:
+    # https://serverfault.com/questions/726519/replacement-for-scponly-on-debian
+
+    ssh-copy-id -i django.pub www
+
