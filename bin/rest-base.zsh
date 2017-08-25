@@ -3,16 +3,16 @@
 # you can extend it to handle a complete request
 # rest() does it
 
-rest_client=(
+_rest_client=(
     curl
     -s
     -H "Content-Type:application/json"
     -H "Accept: application/json" )
 
 rest () {
-
     # create a local copy which would be modified by ...
-    typeset -a rest_client=( $rest_client )
+    typeset -a rest_client
+    rest_client=( $_rest_client )
 
     # ... the next wrapper you want
     "$@"
