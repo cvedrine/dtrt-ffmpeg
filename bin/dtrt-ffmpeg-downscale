@@ -7,6 +7,8 @@
 
 . dtrt-ffmpeg.zsh
 
+alias l='print -l'
+
 scaling_args () { encoder+=( -vf scale=$width\x$height ) }
 
 $use_cuvid && {
@@ -48,6 +50,7 @@ is_upscale () {
 
 scale () {
     typeset -g width height output
+
     for it ($available_sizes) {
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
@@ -57,22 +60,21 @@ scale () {
         continue
 
         [[ -f $output && $output -nt $input ]] || {
+            need_to_encode=true
             scaling_args
             encoder+=( $output )
         }
     }
 }
 
-encode () { $encoder }
-
 #template=${1?the template for output file}
 :        ${1?at least one video to encode}
 
-
 for doit {
+    need_to_encode=false
     input $doit
     # ffprobe_dump_in out/info $input
     output '${input:t:r}_${width}x${height}.${input:e}'
     scale always 240 downscale  upscale_almost '10%'
-    encode
+    $need_to_encode && $encoder
 }
