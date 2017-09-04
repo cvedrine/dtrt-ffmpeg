@@ -1,7 +1,7 @@
 . rest-base.zsh
 
-URL=https://pod-ws-test.u-strasbg.fr/webservice \
-    TOKEN=739168987f8b65829c0c4eb94620784ac9c2f750 \
+TOKEN=${POD_REST_TOKEN?please set POD_REST_TOKEN variable} \
+URL=${POD_REST_URL?please set POD_REST_URL variable}       \
     set_rest_service pod
 
 info () {
