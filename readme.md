@@ -6,8 +6,7 @@ this repo means to be a collection of high level commands on the top of ffmpeg.
 
 just be sure the content of the bin directory is available somewhere in the `$PATH`.
 
-Also, [zsh](http://www.zsh.org) and [mkxh](https://github.com/eiro/mkxh) are
-required by some scripts so you need to install them too.
+*WARNING* please don't try another shell than `zsh` (at least version `5.0.2`)
 
 ## Using slurm
 
@@ -70,7 +69,8 @@ let's say i want to install ffmpod and you start with those lines in your `~/.ss
 * your personnal keys are authorized for these 2 accounts
 
     # get the server keys if it's your first connection
-    { for it ( hpc www ) ssh-keyscan -H $it } >> ~/.ssh/known_hosts
+    { for it ( hpc www )
+        ssh-keyscan -H $it } >> ~/.ssh/known_hosts
 
     # generate a service key for your app
     ssh-keygen -t ed25519 -N '' -C 'django@www' -f ffmpod
@@ -84,4 +84,28 @@ let's say i want to install ffmpod and you start with those lines in your `~/.ss
     # https://serverfault.com/questions/726519/replacement-for-scponly-on-debian
 
     ssh-copy-id -i django.pub www
+
+# use the pod rest service
+
+*WARNING* this really should be an external library with its own repo (and it will at
+some point).
+
+*WARNING* please don't try another shell than `zsh` (at least version `5.0.2`)
+
+* add `bin` in your `$PATH`
+* export those 2 variables with the values relevant to your site
+
+    export POD_REST_TOKEN=XXXXXXXXXXXXXXXXX
+    export POD_REST_URL=https://pod.example.com/webservice
+
+* source the rest-pod.zsh
+
+    . rest-pod.zsh
+
+now all the functions of `rest-base` and `rest-pod` are available. including the pod command
+(see the pod for more informations).
+
+# dtrt-ffmeg-downscale
+
+consult the POD of each commands for more details.
 
