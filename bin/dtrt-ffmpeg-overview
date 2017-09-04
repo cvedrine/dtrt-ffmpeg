@@ -9,9 +9,9 @@ overview () {
     typeset -a strips
     local wdir=$( mktemp -d strips.XXXXXXX )
     local video=${1?name of the video} s=
-    $use_slurm &&
-        thumb=( slurm ffmpegthumbnailer ) ||
-        thumb=( ffmpegthumbnailer )
+    # $use_slurm &&
+    #     thumb=( slurm ffmpegthumbnailer ) ||
+    thumb=( ffmpegthumbnailer )
     shift
     (( $+1 )) || set {0..99}
     for it; do
