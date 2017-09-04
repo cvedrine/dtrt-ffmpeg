@@ -47,6 +47,12 @@ is written using the POD format in the scripts themselves so please use `perldoc
     # -movflags faststart -y output.mp4 # obligation pour streamer (moove atoms au début du fichier)
     # -vf scale_npp=320:240 -movflags faststart $1_240p.mp4
 
+* add a flag to force the reencoding of files
+* add a param to change the output folder
+* add a --help option
+* add a --verbose option
+
+
 # ssh configuration (restricted shell)
 
 let's say i want to install ffmpod and you start with those lines in your `~/.ssh/config` file
