@@ -6,8 +6,7 @@ this repo means to be a collection of high level commands on the top of ffmpeg.
 
 just be sure the content of the bin directory is available somewhere in the `$PATH`.
 
-Also, [zsh](http://www.zsh.org) and [mkxh](https://github.com/eiro/mkxh) are
-required by some scripts so you need to install them too.
+*WARNING* please don't try another shell than `zsh` (at least version `5.0.2`)
 
 ## Using slurm
 
@@ -82,8 +81,10 @@ let's say i want to install ffmpod and you start with those lines in your `~/.ss
 
 # use the pod rest service
 
-this really should be an external library with its own repo (and it will at
+*WARNING* this really should be an external library with its own repo (and it will at
 some point).
+
+*WARNING* please don't try another shell than `zsh` (at least version `5.0.2`)
 
 * add `bin` in your `$PATH`
 * export those 2 variables with the values relevant to your site
@@ -95,7 +96,8 @@ some point).
 
     . rest-pod.zsh
 
-now all the functions of `rest-base` and `rest-pod` are available.
+now all the functions of `rest-base` and `rest-pod` are available. including the pod command
+(see the pod for more informations).
 
 # dtrt-ffmeg-downscale
 
