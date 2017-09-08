@@ -18,9 +18,14 @@
 
 alias l='print -l'
 
+video_info_get () { ffprobe \
+    -v error -select_streams v \
+    -show_entries stream=${2?list of infos to print separated by a coma} \
+    -of default=noprint_wrappers=1:nokey=1 ${1?path of the video} }
+
 scaling_args_commons=(
     # want to test ?
-    # -t 5
+    -t 5
     -codec:a aac
     -ar 48000
     -strict -2 -ac 2
@@ -29,38 +34,16 @@ scaling_args_commons=(
     -y )
 
 reads () { for it { typeset -g $it; read $it; } }
-evalp () { eval "$(print "$@")" }
-status_as_string () { print -P "%(?.true.false)" }
-status_as_flag   () { evalp -P "$1=%(?.true.false)" }
-
-# use_nvidia_gpu plutot que use_cuvid
-if {$use_cuvid} {
-    is_h264_video && encoder+=( -hwaccel cuvid -c:v h264_cuvid )
-    scaling_args () { encoder+=(
-        $scaling_args_commons
-        -vcodec h264_nvenc -vf scale_nnp=$width\x$height ) }
-} else {
-    scaling_args () {
-        encoder+=(
-            $scaling_args_commons
-            -codec:v libx264 -vf scale=$width\x$height ) } }
-
-video_info_get () { ffprobe \
-    -v error -select_streams v \
-    -show_entries stream=${2?list of infos to print separated by a coma} \
-    -of default=noprint_wrappers=1:nokey=1 ${1?path of the video}
-}
 
 input () {
     setopt localoptions nowarncreateglobal
-    typeset -g input_{width,height,video_codec} input=${1?path to the input video}
+    typeset -g input_{width,height,video_codec_name} \
+        input=${1?path to the input video}
     video_info_get $input width,height,codec_name |
         reads input_{width,height,video_codec_name}
-    test h264 = "$( video_codec_name ${1?path of the media to test} )"
+    test h264 = $input_video_codec_name
     ${(%):-'use_cuvid=%(?.true.false)'}
-
     encoder+=( -i $input )
-
 
 }
 
@@ -104,21 +87,34 @@ for it ($available_sizes) {
 #template=${1?the template for output file}
 :        ${1?at least one video to encode}
 
-_rep () { cat <<-.
+_rep () { cat <<-SRC
 	# need_to_encode $need_to_encode
 	# use_cuvid $use_cuvid
 	# use_slurm $use_slurm
 	$encoder
-	.
+	SRC
 }
 
-for doit {
 need_to_encode=false
 input $doit
+
+if {$use_cuvid} {
+    is_h264_video && encoder+=( -hwaccel cuvid -c:v h264_cuvid )
+    scaling_args () { encoder+=(
+        $scaling_args_commons
+        -vcodec h264_nvenc -vf scale_nnp=$width\x$height ) }
+} else {
+    scaling_args () {
+        encoder+=(
+            $scaling_args_commons
+            -codec:v libx264 -vf scale=$width\x$height ) } }
+
+[[ $input:e = *.mp4 ]] || {
+    need_to_encode=true
+    encoder+=( $scaling_args_commons $input:t.mp4 ) }
+
 # ffprobe_dump_in out/info $input
 output '${input:t:r}_${width}x${height}.mp4'
-    scale always 240 downscale upscale_almost '10%'
-    _rep > command
-    $need_to_encode && {
-        $encoder }
-}
+scale always 240 downscale upscale_almost '10%'
+_rep > command
+$need_to_encode && $encoder

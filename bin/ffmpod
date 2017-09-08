@@ -44,7 +44,17 @@ cd videos
 { dtrt-ffmpeg-overview  ../$file:t
     scp overview.jpg $store/$file:h } &
 
-set -x
+[[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
+	dest=$input:t.mp3
+	ffmpeg -i $input -ar 48000 -ac 2  -a:b 128k $dest
+	scp $dest $store
+	# TODO: pod POST le resultat
+	exit
+}
+
+# TODO: blinder en testant l'extention et le mime type
+# (un jour)
+
 dtrt-ffmpeg-downscale ../$file:t
 
 < downscaled while {read height result} {
