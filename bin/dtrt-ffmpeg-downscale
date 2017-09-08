@@ -4,19 +4,23 @@
 # * 20, 50 et 80 et utiliser l'API
 # TODO: overview:
 # * registrer overview.jpg avec l'API
-# TODO: the current output_template is insecure
-# (as a backtrick in it or in the file name can have remote code execution )
-# TODO: scale is a mock
-# don't really use arguements to decide everything
+
 # TODO: fallback when GPU fail (cuvid and nvenc)
-# TODO: -codec:a aac could be replaced by libfdk_aac ???
 # TODO: add -d arg for output dir
+# TODO: scale is a mock
+# TODO: the current output_template is insecure
+# TODO: -codec:a aac could be replaced by libfdk_aac ???
+# (as a backtrick in it or in the file name can have remote code execution )
 
 # steal encoding examples from pod and psm
 
 . dtrt-ffmpeg.zsh
 
 alias l='print -l'
+
+setopt nounset
+
+DEBUG () { print -u2 "$*" }
 
 video_info_get () { ffprobe \
     -v error -select_streams v \
@@ -26,92 +30,108 @@ video_info_get () { ffprobe \
 scaling_args_commons=(
     # want to test ?
     -t 5
+    -map 0
+    -profile:v high
+    -preset fast
     -codec:a aac
     -ar 48000
     -strict -2 -ac 2
     -movflags faststart
-    -profile:v high -pix_fmt yuv420p -preset faster
     -y )
 
 reads () { for it { typeset -g $it; read $it; } }
 
 input () {
     setopt localoptions nowarncreateglobal
-    typeset -g input_{width,height,video_codec_name} \
-        input=${1?path to the input video}
-    video_info_get $input width,height,codec_name |
-        reads input_{width,height,video_codec_name}
-    test h264 = $input_video_codec_name
-    ${(%):-'use_cuvid=%(?.true.false)'}
-    encoder+=( -i $input )
+    local filename=$1
+
+    typeset -g input_video_is_h264
+    typeset -g input=${1?path to the input video}
+    typeset -g input_video_codec_name=$( video_info_get $input codec_name )
+    typeset -g input_video_width=$( video_info_get $input width )
+    typeset -g input_video_height=$( video_info_get $input height ) 
+
+    # TODO: mieux mais buggé
+    # video_info_get $filename width,height,codec_name > EXTR
+    # reads input_video_{width,height,codec_name} < EXTR
+    #
+    #  show me
+    # echo input_video_codec_name=$input_video_codec_name
+    # echo input_video_width=$input_video_width
+    # echo input_video_height=$input_video_height
+    # exit
+    if [[ h264 = $input_video_codec_name ]] {
+        input_video_is_h264=true
+    } else { input_video_is_h264=false }
+    encoder+=( -i $filename )
 
 }
 
-output () {
-# setopt localoptions nowarncreateglobal
-output_template=${1?template for the path of output file}
-}
-
-is_downscale () (( input_height > height ))
-
+output () { output_template=${1?template for the path of output file} }
+is_downscale () (( input_video_height >= height ))
 is_upscale () {
-local tolerance=${1?a tolerance in decimal notation (aka .1 for 10%)}
-(( ( input_height > height ) &&
-   ( input_height - height ) < ( input_height * tolerance )))
-}
+    local tolerance=${1?a tolerance in decimal notation (aka .1 for 10%)}
+    (( ( input_video_height > height ) &&
+       ( input_video_height - height ) < ( input_video_height * tolerance ))) }
 
 scale () {
-typeset -g width height output
+    typeset -g width height output
 
-for it ($available_sizes) {
-    width=${it:r} height=${it:e}
-    output="$( eval echo $output_template )"
+    for it ($available_sizes) {
+        DEBUG "testing size $it"
+        width=${it:r} height=${it:e}
+        output="$( eval echo $output_template )"
 
-    is_downscale  ||
-    is_upscale .1 ||
-    continue
+        is_downscale  ||
+        is_upscale .1 ||
+        continue
 
-    # TODO:
-    # this should be a pre-process parameter or something
-    # ... or this should be the output :)
-    echo $height $output >> downscaled
+        # TODO:
+        # this should be a pre-process parameter or something
+        # ... or this should be the output :)
+        echo $height $output >> downscaled
 
-    [[ -f $output && $output -nt $input ]] || {
-        need_to_encode=true
-        scaling_args
-        encoder+=( $output )
+        [[ -f $output && $output -nt $input ]] || {
+            need_to_encode=true
+            scaling_args
+            encoder+=( $output )
+        }
     }
 }
-}
-
-#template=${1?the template for output file}
-:        ${1?at least one video to encode}
 
 _rep () { cat <<-SRC
 	# need_to_encode $need_to_encode
-	# use_cuvid $use_cuvid
+	# use_gpu $use_gpu
 	# use_slurm $use_slurm
 	$encoder
 	SRC
 }
 
+setopt xtrace errexit
 need_to_encode=false
-input $doit
+input ${1?the video to encode}
 
-if {$use_cuvid} {
-    is_h264_video && encoder+=( -hwaccel cuvid -c:v h264_cuvid )
+# TODO : message d'eric: "cannot communicate"
+
+(( $+use_gpu )) || {
+    if { which nvidia-smi &> /dev/null &&
+            (( $( nvidia-smi -L|wc -l ) ))
+    } { use_gpu=true } else { use_gpu=false }
+}
+
+if {$use_gpu} {
+    $input_video_is_h264 &&
+        encoder+=( -hwaccel cuvid -c:v h264_cuvid )
     scaling_args () { encoder+=(
         $scaling_args_commons
-        -vcodec h264_nvenc -vf scale_nnp=$width\x$height ) }
+        -pixel_format yuv420p
+        -vcodec h264_nvenc -vf scale_npp=$width\:$height ) }
 } else {
     scaling_args () {
         encoder+=(
             $scaling_args_commons
-            -codec:v libx264 -vf scale=$width\x$height ) } }
-
-[[ $input:e = *.mp4 ]] || {
-    need_to_encode=true
-    encoder+=( $scaling_args_commons $input:t.mp4 ) }
+            -pix_fmt yuv420p
+            -codec:v libx264 -vf scale=$width\:$height ) } }
 
 # ffprobe_dump_in out/info $input
 output '${input:t:r}_${width}x${height}.mp4'
