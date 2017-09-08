@@ -5,7 +5,6 @@
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:1   # on exige 1 GPU
 
-set -e
 . rest-pod.zsh
 
 # alias @='for it'
@@ -28,6 +27,11 @@ typeset -A id_for_encoding_type
 id_for_encoding_type=($( pod pod_encodingtypes | as_height_id ))
 
 pod info $id > $data
+pod_error=$(
+    jq -r 'select(.error) |.error' $data )
+test $pod_error && {
+    print -u2 "pod error message: $pod_error"
+    exit }
 
 jq --raw-output '@text "\(.pod_media_url)\n\(.video)"' $data | {
     read base
