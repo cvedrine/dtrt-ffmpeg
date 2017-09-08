@@ -1,11 +1,11 @@
 #! /usr/bin/zsh
 
-set -e
-set -- ${(z)SSH_ORIGINAL_COMMAND}
-# temporary=$( mktemp -d ~/pod.XXXXXXXXXXXXXXX )
-temporary=pod.encoding.$1
-test -d $temporary ||
-    mkdir  $temporary
+set -e -u
+
+test ${SSH_ORIGINAL_COMMAND:-} &&
+    set -- ${(z)SSH_ORIGINAL_COMMAND}
+
+temporary=$( mktemp -d ~/pod.$1.$(date +%F.%R ).XXXX )
 cd $temporary
 print -l "$@" > X
 sbatch -o log.stdout -e log.stderr ffmpod "$@"
