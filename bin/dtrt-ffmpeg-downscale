@@ -39,7 +39,7 @@ input () {
     typeset -g input=${1?path to the input video}
     typeset -g input_video_codec_name=$( video_info_get $input codec_name )
     typeset -g input_video_width=$( video_info_get $input width )
-    typeset -g input_video_height=$( video_info_get $input height ) 
+    typeset -g input_video_height=$( video_info_get $input height )
 
     # TODO: mieux mais buggé
     # video_info_get $filename width,height,codec_name > EXTR
@@ -98,7 +98,7 @@ _rep () { cat <<-SRC
 	SRC
 }
 
-setopt xtrace errexit
+setopt errexit
 need_to_encode=false
 
 # TODO : message d'eric: "cannot communicate"
