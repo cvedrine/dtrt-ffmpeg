@@ -37,12 +37,17 @@ jq --raw-output '@text "\(.pod_media_url)\n\(.video)"' $data | {
     read base
     read file }
 
+overview_send () {
+    scp $from $to
+    pod PATCH "{ \"overview\": \"$to\" }" info $id
+}
+
 pod pass -O $base$file
 mkdir -p videos
 >/dev/null pod encoding_in_progress true info $id &
 cd videos
 { dtrt-ffmpeg-overview  ../$file:t
-    scp overview.jpg $store/$file:h } &
+  id=$id from=overview.jpg to=$store/$file:h overview_send } &
 
 [[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
 	dest=$input:t.mp3
