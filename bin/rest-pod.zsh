@@ -26,5 +26,9 @@ as_height_id () {
         | @text "\(.output_height) \(.id)" '
 }
 
+overview_send () {
+    scp $from $to
+    pod PATCH "{ \"overview\": \"$to\" }" info $id }
+
 
 
