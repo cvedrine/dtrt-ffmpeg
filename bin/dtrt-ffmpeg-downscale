@@ -27,17 +27,7 @@ video_info_get () { ffprobe \
     -show_entries stream=${2?list of infos to print separated by a coma} \
     -of default=noprint_wrappers=1:nokey=1 ${1?path of the video} }
 
-scaling_args_commons=(
-    # want to test ?
-    -t 5
-    -map 0
-    -profile:v high
-    -preset fast
-    -codec:a aac
-    -ar 48000
-    -strict -2 -ac 2
-    -movflags faststart
-    -y )
+scaling_args_commons=()
 
 reads () { for it { typeset -g $it; read $it; } }
 
@@ -68,11 +58,11 @@ input () {
 }
 
 output () { output_template=${1?template for the path of output file} }
+
 is_downscale () (( input_video_height >= height ))
 is_upscale () {
     local tolerance=${1?a tolerance in decimal notation (aka .1 for 10%)}
-    (( ( input_video_height > height ) &&
-       ( input_video_height - height ) < ( input_video_height * tolerance ))) }
+    (( ( height - input_video_height ) < ( height * tolerance ) )) }
 
 scale () {
     typeset -g width height output
@@ -82,8 +72,9 @@ scale () {
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
 
-        is_downscale  ||
-        is_upscale .1 ||
+        (( height == 240 )) ||
+        is_downscale        ||
+        is_upscale .1       ||
         continue
 
         # TODO:
@@ -109,7 +100,6 @@ _rep () { cat <<-SRC
 
 setopt xtrace errexit
 need_to_encode=false
-input ${1?the video to encode}
 
 # TODO : message d'eric: "cannot communicate"
 
@@ -119,13 +109,19 @@ input ${1?the video to encode}
     } { use_gpu=true } else { use_gpu=false }
 }
 
+
 if {$use_gpu} {
-    $input_video_is_h264 &&
-        encoder+=( -hwaccel cuvid -c:v h264_cuvid )
+    # it seems this is not necessary to test the input format anymore
+    # because cuvid don't crash with other formats
+        # $input_video_is_h264 &&
+    encoder+=( -hwaccel cuvid )
     scaling_args () { encoder+=(
-        $scaling_args_commons
-        -pixel_format yuv420p
-        -vcodec h264_nvenc -vf scale_npp=$width\:$height ) }
+        -map 0
+        -c:v h264_nvenc -cq 27 -profile:v high -pixel_format yuv420p -preset fast
+        -vf scale=$width\:$height
+        -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
+        -movflags faststart
+        -y ) }
 } else {
     scaling_args () {
         encoder+=(
@@ -134,7 +130,10 @@ if {$use_gpu} {
             -codec:v libx264 -vf scale=$width\:$height ) } }
 
 # ffprobe_dump_in out/info $input
+
+input ${1?the video to encode}
 output '${input:t:r}_${width}x${height}.mp4'
 scale always 240 downscale upscale_almost '10%'
+
 _rep > command
 $need_to_encode && $encoder
