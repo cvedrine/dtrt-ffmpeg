@@ -14,13 +14,13 @@ overview () {
     thumb=( ffmpegthumbnailer )
     shift
     (( $+1 )) || set {0..99}
-    for it; do
-        s=$wdir/$it.jpg
+    for it {
+        s=$wdir/$it.png
         strips+=$s
-        $thumb -t $it -s 114:64 -c jpeg -i $video -o $s &
-    done
+        $thumb -t $it -s 114:64 -c png -i $video -o $s &
+    }
     wait
-    montage $strips -tile $#'x1' -geometry +0+0 overview.jpg
+    montage $strips -tile $#'x1' -geometry +0+0 overview.png
     # rm -rf $wdir
 }
 
