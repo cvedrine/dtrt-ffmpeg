@@ -4,7 +4,7 @@ from filer.models.foldermodels import Folder
 from filer.models.imagemodels  import Image
 from django.core.files import File
 
-class Directory():
+class Navigator():
 
     def relcd(self,name):
 	self.pwd, _ = Folder.objects.get_or_create\
@@ -41,7 +41,7 @@ class Command(BaseCommand):
 	vid = args[0]
 	ts    = args[1:]
 	video = Pod.objects.get(id=vid)
-	store = Directory()
+	store = Navigator()
 	store.go_video_slug(video)
 	thumbnails =\
 	    [ store.store( Image, t, "%d_%s.png" % (video.id, i) )
