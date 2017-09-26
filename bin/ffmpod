@@ -5,66 +5,47 @@
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:1   # on exige 1 GPU
 
-. rest-pod.zsh
+scp navigator.py potest:p/pods/management/commands/
+scp restricted-shell potest:
 
-# alias @='for it'
-#
-# @ ( 1901{3,4} ) {
-#     >/dev/null pod encoding_in_progress false info $it
-#     pod info $it | jq .encoding_in_progress
-# }
+KEY=( django(:A) )
 
-# this should be variable
-store="potest:/srv/media/pod"
-id=${1?the media id is required}
-# id=18981
-# id=19005
-# id=18981
-data=pod.json
+pod       () { ssh -oIdentitiesOnly=yes -i $KEY potest "$@" }
 
-# TODO: this should be used as available sizes
-typeset -A id_for_encoding_type
-id_for_encoding_type=($( pod pod_encodingtypes | as_height_id ))
-
-pod info $id > $data
-pod_error=$(
-    jq -r 'select(.error) |.error' $data )
-test $pod_error && {
-    print -u2 "pod error message: $pod_error"
-    exit }
-
-jq --raw-output '@text "\(.pod_media_url)\n\(.video)"' $data | {
-    read base
-    read file }
-
-pod pass -O $base$file
-mkdir -p videos
->/dev/null pod encoding_in_progress true info $id &
-cd videos
-{ dtrt-ffmpeg-overview  ../$file:t
-  id=$id from=overview.jpg to=$store/$file:h overview_send } &
-
-[[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
-	dest=$input:t.mp3
-	ffmpeg -i $input -ar 48000 -ac 2  -a:b 128k $dest
-	scp $dest $store
-	# TODO: pod POST le resultat
-	exit
+add_encoding_for   () { pod add_encoding_for "${(q)@}" < $3 }
+add_overview_for   () { pod add_overview_for "${(q)@}" < $2 }
+set_thumbnails_for () {
+    tar cf - "${(@)argv[2,5]}" |
+    ssh -oIdentitiesOnly=yes -i $KEY potest set_thumbnails_for $@
 }
+
+id=$1{1:=19035}
+remote=$( pod get_video_path $id )
+file=$remote:t
+pod cat_video $id > $file
+test -e videos && rm -rf videos
+mkdir -p videos
+cd videos
+
+{ dtrt-ffmpeg-overview  ../$file:t &> OVER
+    add_overview_for $id overview.png
+    set_thumbnails_for $id  strips.*/20.png strips.*/50.png strips.*/70.png } &
+
+# [[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
+# 	dest=$input:t.mp3
+# 	ffmpeg -i $input -ar 48000 -ac 2  -a:b 128k $dest
+# 	# scp $dest $store
+# 	# TODO: pod POST le resultat
+# 	exit
+# }
 
 # TODO: blinder en testant l'extention et le mime type
 # (un jour)
 
-dtrt-ffmpeg-downscale ../$file:t
-
+dtrt-ffmpeg-downscale ../$file:t &> DOWN
 < downscaled while {read height result} {
-    scp $result $store/$file:h
-    pod POST '
-        { "encodingfile": "'$file:h/$result'"
-        , "encodingformat": "video/mp4"
-        , "video": '$id'
-        , "encodingtype":'$id_for_encoding_type[$height]' }
-    ' pod_encodings }
+    add_encoding_for $id $height $result &
+}
 
-pod encoding_in_progress false info $id |
-    jq .encoding_in_progress > after.$id
+wait
+print -u2 done

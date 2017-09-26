@@ -1,0 +1,68 @@
+#! /usr/bin/zsh
+
+. rest-pod.zsh
+
+pod info ${1?video id}
+exit
+
+# # alias @='for it'
+# #
+# # @ ( 1901{3,4} ) {
+# #     >/dev/null pod encoding_in_progress false info $it
+# #     pod info $it | jq .encoding_in_progress
+# # }
+# 
+# # this should be variable
+# store="potest:/srv/media/pod"
+# id=${1?the media id is required}
+# # id=18981
+# # id=19005
+# # id=18981
+# data=pod.json
+# 
+# # TODO: this should be used as available sizes
+# typeset -A id_for_encoding_type
+# id_for_encoding_type=($( pod pod_encodingtypes | as_height_id ))
+# 
+# pod info $id > $data
+# pod_error=$(
+#     jq -r 'select(.error) |.error' $data )
+# test $pod_error && {
+#     print -u2 "pod error message: $pod_error"
+#     exit }
+# 
+# jq --raw-output '@text "\(.pod_media_url)\n\(.video)"' $data | {
+#     read base
+#     read file }
+# 
+# pod pass -O $base$file
+# mkdir -p videos
+# >/dev/null pod encoding_in_progress true info $id &
+# cd videos
+# { dtrt-ffmpeg-overview  ../$file:t
+#   id=$id from=overview.jpg to=$store/$file:h overview_send } &
+# 
+# [[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
+# 	dest=$input:t.mp3
+# 	ffmpeg -i $input -ar 48000 -ac 2  -a:b 128k $dest
+# 	scp $dest $store
+# 	# TODO: pod POST le resultat
+# 	exit
+# }
+# 
+# # TODO: blinder en testant l'extention et le mime type
+# # (un jour)
+# 
+# dtrt-ffmpeg-downscale ../$file:t
+# 
+# < downscaled while {read height result} {
+#     scp $result $store/$file:h
+#     pod POST '
+#         { "encodingfile": "'$file:h/$result'"
+#         , "encodingformat": "video/mp4"
+#         , "video": '$id'
+#         , "encodingtype":'$id_for_encoding_type[$height]' }
+#     ' pod_encodings }
+# 
+# pod encoding_in_progress false info $id |
+#     jq .encoding_in_progress > after.$id
