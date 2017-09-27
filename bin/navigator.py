@@ -34,11 +34,24 @@ class Navigator():
         self.go_home(video.owner)
         return self.cdrel(video.slug)
 
+    # def store(self,model,source,dest):
+    #     file, DEVNULL = model.objects.get_or_create\
+    #         ( folder = self.wd
+    #         , name   = dest
+    #         , owner  = self.wd.owner )
+
     def store(self,model,source,dest):
+
         file, DEVNULL = model.objects.get_or_create\
             ( folder = self.wd
-            , name   = dest
-            , owner  = self.wd.owner )
+            , name   = dest )
+
+        file.file.save\
+            ( dest
+            , File(open(source))
+            , save = True )
+        file.owner = self.wd.owner
+        return file
 
         # sys_dest = os.path.join\
         #         ( settings.MEDIA_ROOT
@@ -53,7 +66,6 @@ class Navigator():
 
         # # os.rename( source, sys_dest)
         # print(" mv from %s -----------------> %s " % ( source, sys_dest))
-        return file
 
     def pwd(self):
         p = self.wd
@@ -120,6 +132,10 @@ class Command(BaseCommand):
         video.save()
         print(root_for(place))
 
+    # def get_encodings_for(self,video):
+    #     video=V(video)
+    #     epods = EncodingPods.objects.filter(video=video).delete()
+
     def add_encoding_for(self,video,height,filename):
         video = V(video)
         place = os.path.join\
@@ -130,12 +146,12 @@ class Command(BaseCommand):
                     ( mediatype='video'
                     , output_height=height )[0]
 
-        epod, DEVNULL  = EncodingPods.objects.get_or_create\
+        epod, DEVNULL = EncodingPods.objects.get_or_create\
             ( video=video
             , encodingType=etype
-            , encodingFile = place
             , encodingFormat="video/mp4")
 
+        epod.encodingFile = place
         epod.save()
         video.save()
 

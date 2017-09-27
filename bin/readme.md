@@ -1,3 +1,5 @@
+le webm et wav ne sont pas pris en compte
+
 le vrai test c'est
 
     use_cuvid && video_is_h264 && gpu_available

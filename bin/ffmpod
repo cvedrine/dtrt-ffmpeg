@@ -9,21 +9,19 @@ scp navigator.py potest:p/pods/management/commands/
 scp restricted-shell potest:
 
 KEY=( django(:A) )
-
-pod       () { ssh -oIdentitiesOnly=yes -i $KEY potest "$@" }
+pod () { ssh -oIdentitiesOnly=yes -i $KEY potest "$@" }
 
 add_encoding_for   () { pod add_encoding_for "${(q)@}" < $3 }
 add_overview_for   () { pod add_overview_for "${(q)@}" < $2 }
 set_thumbnails_for () {
     tar cf - "${(@)argv[2,5]}" |
-    ssh -oIdentitiesOnly=yes -i $KEY potest set_thumbnails_for $@
-}
+    ssh -oIdentitiesOnly=yes -i $KEY potest set_thumbnails_for $@ }
 
-id=$1{1:=19035}
+id=$1
 remote=$( pod get_video_path $id )
 file=$remote:t
 pod cat_video $id > $file
-test -e videos && rm -rf videos
+rm -rf videos
 mkdir -p videos
 cd videos
 
@@ -39,8 +37,8 @@ cd videos
 # 	exit
 # }
 
-# TODO: blinder en testant l'extention et le mime type
-# (un jour)
+#TODO: blinder en testant l'extention et le mime type
+#(un jour)
 
 dtrt-ffmpeg-downscale ../$file:t &> DOWN
 < downscaled while {read height result} {
