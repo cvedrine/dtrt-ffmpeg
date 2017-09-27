@@ -16,29 +16,38 @@ def root_for(base): return os.path.join( settings.MEDIA_ROOT, base )
 class Navigator():
 
     def cdrel(self,name):
+        """
+            change the working directory relatively to the current one
+        """
         self.wd, _ = Folder.objects.get_or_create\
             ( name=name
             , owner=self.wd.owner
             , parent=self.wd )
         return self.wd
 
-    def cdpk(self,pk): self.wd = Folder.objects.get(id=int(pk))
+    def cdpk(self,pk):
+        """
+            go to the directory ided by the pk
+        """
+        self.wd = Folder.objects.get(id=int(pk))
 
     def go_home(self,owner):
+        """
+            go to the home directory of a user (as django user)
+        """
         self.wd = Folder.objects.get\
             ( name=owner
             , owner=owner
             , level=0 )
 
     def go_video_slug(self,video):
+        """
+            go to the slug of a video
+        """
+
+        V(video)
         self.go_home(video.owner)
         return self.cdrel(video.slug)
-
-    # def store(self,model,source,dest):
-    #     file, DEVNULL = model.objects.get_or_create\
-    #         ( folder = self.wd
-    #         , name   = dest
-    #         , owner  = self.wd.owner )
 
     def store(self,model,source,dest):
 
@@ -53,28 +62,16 @@ class Navigator():
         file.owner = self.wd.owner
         return file
 
-        # sys_dest = os.path.join\
-        #         ( settings.MEDIA_ROOT
-        #         , getattr(settings,'VIDEOS_DIR','videos')
-        #         , self.wd.pretty_logical_path, dest )
-
-        # sys_dest =\
-        #     settings.MEDIA_ROOT\
-        #     + '/' + getattr(settings,'VIDEOS_DIR','videos')\
-        #     + '/' + self.wd.pretty_logical_path\
-        #     + '/' + dest
-
-        # # os.rename( source, sys_dest)
-        # print(" mv from %s -----------------> %s " % ( source, sys_dest))
-
     def pwd(self):
         p = self.wd
         for i in [ p.name, p.pk, p.pretty_logical_path ]: print(i)
 
 def V(v):
     if isinstance(v,Pod): return v
-    if isinstance(v,str): return Pod.objects.get(id=v)
-    return None
+    if isinstance(v,str): return V(Pod.objects.get(id=v))
+    raise Exception\
+        ( "can't get a pod object from the %s %s"
+        % (str(type(v)), v ))
 
 def path_for_items_of_video(video):
     video = V(video)
@@ -132,19 +129,17 @@ class Command(BaseCommand):
         video.save()
         print(root_for(place))
 
-    # def get_encodings_for(self,video):
-    #     video=V(video)
-    #     epods = EncodingPods.objects.filter(video=video).delete()
-
     def add_encoding_for(self,video,height,filename):
+
         video = V(video)
+
         place = os.path.join\
             ( path_for_items_of_video(video)
             , os.path.basename(filename) )
 
         etype = EncodingType.objects.filter\
-                    ( mediatype='video'
-                    , output_height=height )[0]
+            ( mediatype='video'
+            , output_height=height )[0]
 
         epod, DEVNULL = EncodingPods.objects.get_or_create\
             ( video=video
@@ -156,22 +151,5 @@ class Command(BaseCommand):
         video.save()
 
         print(root_for(place))
-
-        # in perl:
-        # say for grep /^[fp]/, keys %$epod
-        #
-        # now ... in python
-
-        # import re
-        # p = re.compile('^[fp]')
-
-        # because the python syntax is weirdly inconsistent:
-
-        # FUCK you python ... round 1
-        # for d in dir(epod) if p.match(d): print(d)
-
-        # FUCK you python ... round 2
-        # for d in dir(epod): if p.match(d): print(d)
-
 
     def handle(self, *args, **options): getattr(self,args[0])(*args[1:])
