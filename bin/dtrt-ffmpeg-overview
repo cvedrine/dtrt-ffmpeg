@@ -7,7 +7,8 @@
 overview () {
     typeset -a thumb
     typeset -a strips
-    local wdir=$( mktemp -d strips.XXXXXXX )
+    local wdir=overview
+    mkdir -p $wdir
     local video=${1?name of the video} s=
     # $use_slurm &&
     #     thumb=( slurm ffmpegthumbnailer ) ||
@@ -21,8 +22,8 @@ overview () {
     }
     wait
     montage $strips -tile $#'x1' -geometry +0+0 overview.png
-    # rm -rf $wdir
 }
+
 
 overview "$@"
 
