@@ -116,8 +116,8 @@ if {$use_gpu} {
         # $input_video_is_h264 &&
     encoder+=( -hwaccel cuvid )
         # -cq 27 had very bad render results
+        # -map 0 removed as it crash encodings in some cases
     scaling_args () { encoder+=(
-        -map 0
         -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
         -vf scale=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
