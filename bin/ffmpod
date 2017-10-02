@@ -5,14 +5,14 @@
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:1   # on exige 1 GPU
 
-KEY=( django(:A) )
-pod () { ssh -oIdentitiesOnly=yes -i $KEY potest "$@" }
+# KEY=( django(:A) )
+# pod () { ssh -oIdentitiesOnly=yes -i $KEY pod "$@" }
+# everything must be configuration
+# ssh-argv0 must be used?
 
-add_encoding_for   () { pod add_encoding_for "${(q)@}" < $3 }
-add_overview_for   () { pod add_overview_for "${(q)@}" < $2 }
-set_thumbnails_for () {
-    tar cf - "${(@)argv[2,5]}" |
-    ssh -oIdentitiesOnly=yes -i $KEY potest set_thumbnails_for $@ }
+add_encoding_for   () { ssh pod add_encoding_for "${(q)@}" < $3 }
+add_overview_for   () { ssh pod add_overview_for "${(q)@}" < $2 }
+set_thumbnails_for () { tar cf - "${(@)argv[2,5]}" | ssh pod set_thumbnails_for $@ }
 
 id=$1
 remote=$( pod get_video_path $id )
