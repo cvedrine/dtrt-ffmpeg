@@ -1,49 +1,50 @@
 # /usr/bin/zsh
 
-#
-#
-#
-
 . ~/.virtualenvs/pod/bin/activate
 set -- "${(z)SSH_ORIGINAL_COMMAND}"
 setopt extendedglob errexit nounset
+pod=podcast-pprd.unistra.fr/current/
+
 
 case "$1" {
 
     (add_encoding_for)
-        d=$( p/manage.py navigator "$@" )
+        d=$( $pod/manage.py navigator "$@" )
         print -u2 install $d
         mkdir -p $d:h
         cat > $d
     ;;
 
     (add_overview_for)
-        d=$( p/manage.py navigator "$@" )
+        d=$( $pod/manage.py navigator "$@" )
         print -u2 install $d
         mkdir -p $d:h
         cat > $d
     ;;
 
     (set_thumbnails_for)
-        d=$( mktemp -d /tmp/thumbnails.$2.XXXX )
+        d=$( mktemp -d /tmp/post-thumbnails.$2.XXXX )
         print tar x -C $d
         tar x -C $d
         argv[3,5]=( $d/${^argv[3,5]} )
-        print -u2 p/manage.py navigator "$@"
-        p/manage.py navigator "$@"
+        print -u2 $pod/manage.py navigator "$@"
+        $pod/manage.py navigator "$@"
     ;;
 
     (cat_video)
-        d=$( p/manage.py navigator get_video_path $2 )
+        d=$( $pod/manage.py navigator get_video_path $2 )
         print -u2 downloading $d
         cat $d
     ;;
 
     (get_encodings_for|get_video_scales|get_video_path)
-        p/manage.py navigator "$@"
+        $pod/manage.py navigator "$@"
     ;;
+
+    (ssh_client) print $SSH_CLIENT ;;
 
     (*)
         print -u2 forbidden command "$*"
     ;;
+
 }
