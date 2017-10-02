@@ -5,7 +5,6 @@ set -- "${(z)SSH_ORIGINAL_COMMAND}"
 setopt extendedglob errexit nounset
 pod=podcast-pprd.unistra.fr/current/
 
-
 case "$1" {
 
     (add_encoding_for)
@@ -24,7 +23,6 @@ case "$1" {
 
     (set_thumbnails_for)
         d=$( mktemp -d /tmp/post-thumbnails.$2.XXXX )
-        print tar x -C $d
         tar x -C $d
         argv[3,5]=( $d/${^argv[3,5]} )
         print -u2 $pod/manage.py navigator "$@"
