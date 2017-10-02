@@ -5,42 +5,46 @@
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:1   # on exige 1 GPU
 
-# KEY=( django(:A) )
-# pod () { ssh -oIdentitiesOnly=yes -i $KEY pod "$@" }
-# everything must be configuration
-# ssh-argv0 must be used?
+. pod-ssh.zsh
 
-add_encoding_for   () { ssh pod add_encoding_for "${(q)@}" < $3 }
-add_overview_for   () { ssh pod add_overview_for "${(q)@}" < $2 }
-set_thumbnails_for () { tar cf - "${(@)argv[2,5]}" | ssh pod set_thumbnails_for $@ }
+DEBUG () { print -lu2 "$@" }
 
 id=$1
-remote=$( pod get_video_path $id )
+remote=$( ssh pod get_video_path $id )
+
+DEBUG "preparing video $1 from $remote"
+
 file=$remote:t
-pod cat_video $id > $file
+ssh pod cat_video $id > $file
+
 rm -rf videos
 mkdir -p videos
 cd videos
 
-{ dtrt-ffmpeg-overview  ../$file:t &> OVER
-    add_overview_for $id overview.png
-    set_thumbnails_for $id  strips.*/20.png strips.*/50.png strips.*/70.png } &
+[[ $file:e = *.(wav|mp3|ogg) ]] && {
+    dest=$file:t.mp3
+    ffmpeg -i ../$file -ar 48000 -ac 2  -a:b 128k $dest
+    ssh pod add_mp3_for $id $dest
+    exit
+}
 
-# [[ $input:e = *.(wav|mp3|ogg|flac) ]] && {
-# 	dest=$input:t.mp3
-# 	ffmpeg -i $input -ar 48000 -ac 2  -a:b 128k $dest
-# 	# scp $dest $store
-# 	# TODO: pod POST le resultat
-# 	exit
-# }
+
+DEBUG "dtrt-ffmpeg-overview  ../$file:t"
+{ dtrt-ffmpeg-overview  ../$file:t
+    add_overview_for $id overview.png } &
+
+DEBUG "dtrt-ffmpeg-thumbnails  ../$file:t"
+{ dtrt-ffmpeg-thumbnails  ../$file:t
+    set_thumbnails_for $id  thumbnails/{3,6,9}0.png } &
 
 #TODO: blinder en testant l'extention et le mime type
 #(un jour)
 
-dtrt-ffmpeg-downscale ../$file:t &> DOWN
+DEBUG "dtrt-ffmpeg-downscale ../$file:t"
+
+dtrt-ffmpeg-downscale ../$file:t
 < downscaled while {read height result} {
     add_encoding_for $id $height $result &
 }
 
 wait
-print -u2 done
