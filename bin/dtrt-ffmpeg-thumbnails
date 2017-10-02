@@ -1,0 +1,14 @@
+#! /usr/bin/env zsh
+
+new_thumbnails () {
+    local wdir=thumbnails
+    mkdir -p $wdir
+    local video=${1?name of the video} s=
+    local it
+    for it ( 30 60 90 )
+        # ffmpegthumbnailer -t $it -s 256:256 -c png -i $video -o $wdir/$it.png &
+        ffmpegthumbnailer -q10 -s1024 -t $it -c png -i $video -o $wdir/$it.png &
+    wait
+}
+
+new_thumbnails "$@"
