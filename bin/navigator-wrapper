@@ -21,6 +21,15 @@ case "$1" {
         cat > $d
     ;;
 
+
+    (add_mp3_for)
+        d=$( $pod/manage.py navigator "$@" )
+        print -u2 install $d
+        mkdir -p $d:h
+        cat > $d
+    ;;
+
+
     (set_thumbnails_for)
         d=$( mktemp -d /tmp/post-thumbnails.$2.XXXX )
         tar x -C $d
