@@ -1,12 +1,26 @@
 #! /usr/bin/zsh
 
+# the mean of this script is to start ffmpod in
+# a directory named after the video id and the
+# date of the job
+
+temporary=$( mktemp -d ~/pod.$1.$(date +%F.%R ).XXXX )
+
+# because ffmpod uses commands installed in there
+
 path+=~/bin
 
-set -e -u
+setopt errexit nounset
+
+# if process was invoked over ssh, use the original ssh command
+# as argument of this script
+
 test ${SSH_ORIGINAL_COMMAND:-} &&
     set -- ${(z)SSH_ORIGINAL_COMMAND}
 
-temporary=$( mktemp -d ~/pod.$1.$(date +%F.%R ).XXXX )
 cd $temporary
+
+# we store the parameters in X file in order to restart a job manually
 print -l "$@" > X
+
 sbatch -o log.stdout -e log.stderr ffmpod "$@"
