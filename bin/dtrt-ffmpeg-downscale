@@ -22,11 +22,6 @@ setopt nounset
 
 DEBUG () { print -u2 "$*" }
 
-video_info_get () { ffprobe \
-    -v error -select_streams v \
-    -show_entries stream=${2?list of infos to print separated by a coma} \
-    -of default=noprint_wrappers=1:nokey=1 ${1?path of the video} }
-
 scaling_args_commons=()
 
 reads () { for it { typeset -g $it; read $it; } }

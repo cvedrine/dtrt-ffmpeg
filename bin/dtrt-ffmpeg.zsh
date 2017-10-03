@@ -19,4 +19,8 @@ workdir=.
 # TODO: XDG support ?
 for it ( ~/.dtrt-ffpmeg(N) ) . $it
 
+video_info_get () { ffprobe \
+    -v error -select_streams v \
+    -show_entries stream=${2?list of infos to print separated by a coma} \
+    -of default=noprint_wrappers=1:nokey=1 ${1?path of the video} }
 
