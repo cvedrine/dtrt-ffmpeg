@@ -21,13 +21,15 @@ rm -rf videos
 mkdir -p videos
 cd videos
 
-[[ $file:e = *.(wav|mp3|ogg) ]] && {
-    dest=$file:t.mp3
-    ffmpeg -i ../$file -ar 48000 -ac 2  -a:b 128k $dest
-    ssh pod add_mp3_for $id $dest
-    exit
+case "$file:e" {
+    (wav|mp3|ogg)
+        dest=$file:t:r.mp3
+        # ffmpeg -i ../$file -ar 48000 -ac 2 -b:a 128k $dest
+        cp $file $dest
+        ssh pod add_mp3_for $id $dest
+        exit
+    ;;
 }
-
 
 DEBUG "dtrt-ffmpeg-overview  ../$file:t"
 { dtrt-ffmpeg-overview  ../$file:t
