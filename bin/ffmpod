@@ -49,4 +49,9 @@ dtrt-ffmpeg-downscale ../$file:t
     add_encoding_for $id $height $result &
 }
 
+ssh pod setattr $id duration $( video_info_get duration ../$file ) &
+
 wait
+ssh pod setattr $id encoding_status Done
+
+
