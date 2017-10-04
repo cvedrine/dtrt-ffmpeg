@@ -6,6 +6,7 @@
 #SBATCH --gres=gpu:1   # on exige 1 GPU
 
 . pod-ssh.zsh
+. dtrt-ffmpeg.zsh
 
 DEBUG () { print -lu2 "$@" }
 
@@ -25,7 +26,7 @@ case "$file:e" {
     (wav|mp3|ogg)
         dest=$file:t:r.mp3
         # ffmpeg -i ../$file -ar 48000 -ac 2 -b:a 128k $dest
-        cp $file $dest
+        lame ../$file -b 128k $dest
         ssh pod add_mp3_for $id $dest
         exit
     ;;
@@ -49,9 +50,12 @@ dtrt-ffmpeg-downscale ../$file:t
     add_encoding_for $id $height $result &
 }
 
-ssh pod setattr $id duration $( video_info_get duration ../$file ) &
+ssh pod setattr $id duration $(
+        video_info_get ../$file duration |
+        sed 1q |
+        cut -f1 -d. )
 
 wait
-ssh pod setattr $id encoding_status Done
 
+ssh pod setattr $id encoding_status "'DONE $(date)'"
 
