@@ -170,6 +170,5 @@ consult the POD of each commands for more details.
 
 # global infrastructure
 
-
-
+see [documentation/global.md](documentation/global.md)
 
