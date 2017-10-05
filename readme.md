@@ -143,6 +143,11 @@ now all the functions of `rest-base` and `rest-pod` are available. including the
 
 consult the POD of each commands for more details.
 
+# test from pod
+
+    ssh -o IdentitiesOnly=yes -i ~/.ssh/django hpc  19314
+    Submitted batch job 3185644
+
 # todo
 
 * improve documentation
@@ -161,8 +166,9 @@ consult the POD of each commands for more details.
 * add a flag to force the reencoding of files
 * add a param to change the output folder
 * add a --help option
-* add a --verbose option
+* add a --verbose option 
 
+# global infrastructure
 
 
 

@@ -19,8 +19,11 @@ workdir=.
 # TODO: XDG support ?
 for it ( ~/.dtrt-ffpmeg(N) ) . $it
 
-video_info_get () { ffprobe \
-    -v error -select_streams v \
-    -show_entries stream=${2?list of infos to print separated by a coma} \
+info_get () { ffprobe \
+    -v error -select_streams $2 \
+    -show_entries stream=${3?list of infos to print separated by a coma} \
     -of default=noprint_wrappers=1:nokey=1 ${1?path of the video} }
 
+video_info_get () { info_get $1 v $2 }
+keep_one_int   () { sed -n 's#[.].*## ; p ; q' }
+video_duration () { info_get $1 a duration | keep_one_int }

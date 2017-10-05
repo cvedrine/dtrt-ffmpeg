@@ -23,11 +23,17 @@ mkdir -p videos
 cd videos
 
 case "$file:e" {
-    (wav|mp3|ogg)
+    (wav|mp3|ogg|wma)
         dest=$file:t:r.mp3
-        # ffmpeg -i ../$file -ar 48000 -ac 2 -b:a 128k $dest
-        lame ../$file -b 128k $dest
-        ssh pod add_mp3_for $id $dest
+        command=( ffmpeg -i ../$file -ar 48000 -ac 2 -b:a 128k $dest )
+        # command=( lame ../$file -b 128k $dest)
+        print -l $command > command
+        $command
+        duration=$( info_get $dest a duration | keep_one_int )
+        add_mp3_for $id $dest
+        print ssh pod setattr $id duration $duration
+        ssh pod setattr $id duration $duration
+        ssh pod setattr $id encoding_status "'DONE $(date)'"
         exit
     ;;
 }
@@ -47,14 +53,12 @@ DEBUG "dtrt-ffmpeg-downscale ../$file:t"
 
 dtrt-ffmpeg-downscale ../$file:t
 < downscaled while {read height result} {
+    : ${duration:=$( info_get $result v duration | keep_one_int )}
     add_encoding_for $id $height $result &
 }
 
-ssh pod setattr $id duration $(
-        video_info_get ../$file duration |
-        sed 1q |
-        cut -f1 -d. )
-
+print duration: $duration
+ssh pod setattr $id duration $duration
 wait
 
 ssh pod setattr $id encoding_status "'DONE $(date)'"
