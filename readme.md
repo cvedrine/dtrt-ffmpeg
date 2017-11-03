@@ -39,20 +39,13 @@ is written using the POD format in the scripts themselves so please use `perldoc
 * do some benchmarks to compare CPU, GPU and slurm solutions
 * do some benchmarks to compare slurm with one process by downscale
 * very desapointed by GPU perfomance, `nvidia-smi` seems to show that GPU is underused.
+* autodect GPU environment to use the best option it could
+* use of fallback strategies when encoding failed
 * some parameters to test/show
-
-    # -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high
-    # -preset fast # qualité inferieure? 2 passes ?
-    # -profile:v high -pixel_format yuv420p
-    # -c:a libfdk_aac -ar 48000 -ac 2 -ab 192
-    # -movflags faststart -y output.mp4 # obligation pour streamer (moove atoms au début du fichier)
-    # -vf scale_npp=320:240 -movflags faststart $1_240p.mp4
-
 * add a flag to force the reencoding of files
 * add a param to change the output folder
 * add a --help option
 * add a --verbose option
-
 
 # ssh configuration (restricted shell)
 
@@ -79,13 +72,11 @@ let's say i want to install ffmpod and you start with those lines in your `~/.ss
 
     # install the key with a restricted shell on hpc
 
-    sed '/^ssh-/s/^/command="ffmpod" /' django.pub | ssh-copy-id -i hpc
+    sed '/^ssh-/s/^/command="ffmpod" /' ffmpod.pub | ssh-copy-id -i hpc
 
     # TODO: configure ssh to avoid execution of remote commands with this key
     # good start:
     # https://serverfault.com/questions/726519/replacement-for-scponly-on-debian
-
-    ssh-copy-id -i django.pub www
 
 # installation
 
