@@ -44,7 +44,7 @@ case "$1" {
         cat $d
     ;;
 
-    (get_encodings_for|get_video_scales|get_video_path|setattr)
+    (get_encodings_for|get_video_scales|get_video_path|setattr|enable|disable)
         $pod/manage.py navigator "$@"
     ;;
 

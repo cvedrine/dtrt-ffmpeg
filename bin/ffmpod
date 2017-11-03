@@ -34,6 +34,7 @@ case "$file:e" {
         print ssh pod setattr $id duration $duration
         ssh pod setattr $id duration $duration
         ssh pod setattr $id encoding_status "'DONE $(date)'"
+        ssh pod disable $id encoding_in_progress
         exit
     ;;
 }
