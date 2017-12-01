@@ -1,9 +1,10 @@
 # /usr/bin/zsh
 
 . ~/.virtualenvs/pod/bin/activate
+. ~/.podrc
+
 set -- "${(z)SSH_ORIGINAL_COMMAND}"
 setopt extendedglob errexit nounset
-pod=podcast-pprd.unistra.fr/current/
 
 case "$1" {
 
