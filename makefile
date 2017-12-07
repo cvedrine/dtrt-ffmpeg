@@ -1,23 +1,25 @@
-encoder_tools=(
-	bin/dtrt-ffmpeg-thumbnails
-	bin/dtrt-ffmpeg-guess-config
-	bin/dtrt-ffmpeg-overview
-	bin/dtrt-ffmpeg.zsh
-	bin/pod-ssh.zsh
-	bin/process
-	bin/ffmpod-rest
-	bin/dtrt-ffmpeg-downscale
-	bin/ffmpod )
+SHELL=zsh
+
+encoder_tools= \
+	dtrt-ffmpeg-thumbnails \
+	dtrt-ffmpeg-guess-config \
+	dtrt-ffmpeg-overview \
+	dtrt-ffmpeg.zsh \
+	pod-ssh.zsh \
+	process \
+	ffmpod-rest \
+	dtrt-ffmpeg-downscale \
+	ffmpod
 
 pod_tools=( bin/navigator-wrapper )
 
 pod:
-	cp $(pod_tools) $(BINDIR)
-
+	install -d ${BINDIR}
+	install ${pod_tools} ${BINDIR}
 
 # don't forget to edit and copy podrc.sample
 # to ~/.podrc
 encoder:
-	cp $(encoder_tools) $(BINDIR)
-
+	install -d ${BINDIR}
+	install ${encoder_tools} ${BINDIR}
 
