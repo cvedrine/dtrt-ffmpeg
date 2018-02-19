@@ -62,8 +62,6 @@ is_upscale () {
 scale () {
     typeset -g width height output
         encostart=( $encoder )
-        encofull=( )
-        incr=0
     for it ($available_sizes) {
         DEBUG "testing size $it"
         width=${it:r} height=${it:e}
@@ -83,17 +81,10 @@ scale () {
             need_to_encode=true
             scaling_args
             encoder+=( $output )
-        #encofull+=("export CUDA_VISIBLE_DEVICES=$incr ;" )
-        encofull+=( $encoder )
-        encofull+=( '&' )
-        $encoder
-        encoder=( $encostart )
-        incr=$((incr + 1))
+            $encoder
+            encoder=( $encostart )
         }
     }
-    encoder=( $encofull )
-    encoder+=( "wait" )
-    #echo "encoder $encoder" > totoenco
 }
 
 _rep () { cat <<-SRC
@@ -143,4 +134,4 @@ output '${input:t:r}_${width}x${height}.mp4'
 scale always 240 downscale upscale_almost '10%'
 
 _rep > command
-$need_to_encode && $encoder
+#$need_to_encode && $encoder
