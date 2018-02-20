@@ -22,6 +22,7 @@ overview () {
     }
     wait
     montage $strips -tile $#'x1' -geometry +0+0 overview.png
+    rm -rf $wdir
 }
 
 

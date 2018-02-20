@@ -62,6 +62,8 @@ is_upscale () {
 scale () {
     typeset -g width height output
         encostart=( $encoder )
+        incr=0
+        echo "#!/bin/zsh" > launch.zsh
     for it ($available_sizes) {
         DEBUG "testing size $it"
         width=${it:r} height=${it:e}
@@ -81,7 +83,15 @@ scale () {
             need_to_encode=true
             scaling_args
             encoder+=( $output )
-            $encoder
+            echo "for lp in 1" >> launch.zsh
+            echo "do" >> launch.zsh
+            echo "CUDA_VISIBLE_DEVICES=$incr $encoder" >> launch.zsh
+            echo "done &" >> launch.zsh
+            if [[ (($incr -eq 1)) || (($incr -eq 3)) ]]
+            then
+                echo "wait" >> launch.zsh
+            fi
+            incr=$((incr + 1))
             encoder=( $encostart )
         }
     }
@@ -111,11 +121,11 @@ if {$use_gpu} {
     # it seems this is not necessary to test the input format anymore
     # because cuvid don't crash with other formats
         # $input_video_is_h264 &&
-    encoder+=( -hwaccel cuvid )
+#    encoder+=( -hwaccel cuvid )
         # -cq 27 had very bad render results
         # -map 0 removed as it crash encodings in some cases
     scaling_args () { encoder+=(
-        -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
+        -gpu 0 -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
         -vf scale=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
