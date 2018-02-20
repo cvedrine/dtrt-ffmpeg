@@ -95,6 +95,8 @@ scale () {
             encoder=( $encostart )
         }
     }
+    echo "wait" >> launch.zsh
+    zsh ./launch.zsh
 }
 
 _rep () { cat <<-SRC
