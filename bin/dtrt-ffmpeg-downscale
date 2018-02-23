@@ -1,19 +1,6 @@
 #! /usr/bin/env zsh
 
-# TODO: thumbnails:
-# * 20, 50 et 80 et utiliser l'API
-# TODO: overview:
-# * registrer overview.jpg avec l'API
-
-# TODO: fallback when GPU fail (cuvid and nvenc)
-# TODO: add -d arg for output dir
-# TODO: scale is a mock
-# TODO: the current output_template is insecure
-# TODO: -codec:a aac could be replaced by libfdk_aac ???
-# (as a backtrick in it or in the file name can have remote code execution )
-
-# steal encoding examples from pod and psm
-
+# include the file dtrt-ffmpeg.zsh for getting the sizes to encode
 . dtrt-ffmpeg.zsh
 
 alias l='print -l'
@@ -36,15 +23,6 @@ input () {
     typeset -g input_video_width=$( video_info_get $input width )
     typeset -g input_video_height=$( video_info_get $input height )
 
-    # TODO: mieux mais buggé
-    # video_info_get $filename width,height,codec_name > EXTR
-    # reads input_video_{width,height,codec_name} < EXTR
-    #
-    #  show me
-    # echo input_video_codec_name=$input_video_codec_name
-    # echo input_video_width=$input_video_width
-    # echo input_video_height=$input_video_height
-    # exit
     if [[ h264 = $input_video_codec_name ]] {
         input_video_is_h264=true
     } else { input_video_is_h264=false }
@@ -61,10 +39,12 @@ is_upscale () {
 
 scale () {
     typeset -g width height output
-        encostart=( $encoder )
-        incr=0
-        echo "#!/bin/zsh" > launch.zsh
-    for it ($available_sizes) {
+        encostart=( $encoder )				#Store the beginning of the encode command
+        incr=0								#Variable for the selection of the GPU and the number of the stream to encode
+        echo "#!/bin/zsh" > launch.zsh		#Create the script which will launch the encoding
+
+# Building of the encoding commands and the file to be launched.
+    for it ($available_sizes) {				
         DEBUG "testing size $it"
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
@@ -74,60 +54,55 @@ scale () {
         is_upscale .1       ||
         continue
 
-        # TODO:
-        # this should be a pre-process parameter or something
-        # ... or this should be the output :)
         echo $height $output >> downscaled
 
         [[ -f $output && $output -nt $input ]] || {
-            need_to_encode=true
             scaling_args
             encoder+=( $output )
             echo "for lp in 1" >> launch.zsh
             echo "do" >> launch.zsh
-            echo "CUDA_VISIBLE_DEVICES=$incr $encoder" >> launch.zsh
+            echo "CUDA_VISIBLE_DEVICES=$incr $encoder" >> launch.zsh	#Select the graphic card and write the encoding command in the file
             echo "done &" >> launch.zsh
+
+# The streams are encoded 2x2
+# This is due to a limitation somewhere in the driver or in Cuda. Only 2 streams can be encoded at the same time even with 4 graphic cards.
+# Maybe it's because we're using gaming graphic card and not expensive Quadro or Tesla cards
             if [[ (($incr -eq 1)) || (($incr -eq 3)) ]]
             then
                 echo "wait" >> launch.zsh
             fi
             incr=$((incr + 1))
-            encoder=( $encostart )
+
+# we only have 4 graphic cards in a node
+            if [[ $incr -eq 4 ]]
+            then
+            	incr=0
+            fi
+            encoder=( $encostart )			#Next encoding command
         }
     }
     echo "wait" >> launch.zsh
-    zsh ./launch.zsh
-}
-
-_rep () { cat <<-SRC
-	# need_to_encode $need_to_encode
-	# use_gpu $use_gpu
-	# use_slurm $use_slurm
-	$encoder
-	SRC
+    zsh ./launch.zsh			#Launch the encoding process
 }
 
 setopt errexit
-need_to_encode=false
 
-# TODO : message d'eric: "cannot communicate"
-
+# Verify the presence of a Nvidia GPU
 (( $+use_gpu )) || {
     if { which nvidia-smi &> /dev/null &&
             (( $( nvidia-smi -L|wc -l ) ))
     } { use_gpu=true } else { use_gpu=false }
 }
 
-
+# Creation of the ffmpeg command with all the parameters
 if {$use_gpu} {
-    # it seems this is not necessary to test the input format anymore
-    # because cuvid don't crash with other formats
+    # Accelerate decoding. Not use for the moment because of limitations due to the format of the input file. The aspect must tested and will be done in the future
         # $input_video_is_h264 &&
-#    encoder+=( -hwaccel cuvid )
-        # -cq 27 had very bad render results
-        # -map 0 removed as it crash encodings in some cases
+	# encoder+=( -hwaccel cuvid )
+
+	# Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
-        -gpu 0 -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
+        -gpu 0 -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast  #The selection of the gpu can be done here but it doesn't seem to work
         -vf scale=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
@@ -139,11 +114,6 @@ if {$use_gpu} {
             -pix_fmt yuv420p
             -codec:v libx264 -vf scale=$width\:$height ) } }
 
-# ffprobe_dump_in out/info $input
-
 input ${1?the video to encode}
 output '${input:t:r}_${width}x${height}.mp4'
 scale always 240 downscale upscale_almost '10%'
-
-_rep > command
-#$need_to_encode && $encoder
