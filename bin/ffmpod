@@ -60,7 +60,6 @@ dtrt-ffmpeg-downscale ../$file:t
 
 print duration: $duration
 ssh pod setattr $id duration $duration
-wait
-
 ssh pod setattr $id encoding_status "'DONE $(date)'"
-
+ssh pod disable $id encoding_in_progress
+wait
