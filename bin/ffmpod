@@ -63,3 +63,12 @@ ssh pod setattr $id duration $duration
 ssh pod setattr $id encoding_status "'DONE $(date)'"
 ssh pod disable $id encoding_in_progress
 wait
+
+#Cleaning folders on HPC
+cd
+daysafter=1     #How many days after last modification
+if [ $(whoami) = "pod" ]
+then daysafter=7	#Seven days after in production
+fi
+find ./pod.* -maxdepth 0 -mtime $daysafter -print0 | xargs -0 rm -rf      #Delete old working folders
+
