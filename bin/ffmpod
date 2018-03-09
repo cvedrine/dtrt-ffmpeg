@@ -31,6 +31,7 @@ case "$file:e" {
         $command
         duration=$( info_get $dest a duration | keep_one_int )
         add_mp3_for $id $dest
+        set_thumbnails_for $id  ~/bin/{3,6,9}0.png
         print ssh pod setattr $id duration $duration
         ssh pod setattr $id duration $duration
         ssh pod setattr $id encoding_status "'DONE $(date)'"
@@ -58,6 +59,7 @@ dtrt-ffmpeg-downscale ../$file:t
     add_encoding_for $id $height $result &
 }
 
+wait
 print duration: $duration
 ssh pod setattr $id duration $duration
 ssh pod setattr $id encoding_status "'DONE $(date)'"
