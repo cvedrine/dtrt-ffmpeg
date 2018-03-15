@@ -25,9 +25,13 @@ input () {
 
     if [[ h264 = $input_video_codec_name ]] {
         input_video_is_h264=true
-    } else { input_video_is_h264=false }
-    encoder+=( -i $filename )
-
+        encoder+=( -hwaccel cuvid -c:v h264_cuvid -i $filename )
+        scale_defnpp="scale_npp"
+    } else {
+        input_video_is_h264=false
+        encoder+=( -i $filename )
+        scale_defnpp="scale"
+    }
 }
 
 output () { output_template=${1?template for the path of output file} }
@@ -103,7 +107,7 @@ if {$use_gpu} {
 	# Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
         -gpu 0 -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast  #The selection of the gpu can be done here but it doesn't seem to work
-        -vf scale=$width\:$height
+        -vf $scale_defnpp=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
         -y ) }
