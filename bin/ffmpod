@@ -4,6 +4,7 @@
 #xxxSBATCH -N 1-1         # nombre de noeuds min-max
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:1   # on exige 1 GPU
+#SBATCH --exclusive
 
 . pod-ssh.zsh
 . dtrt-ffmpeg.zsh
