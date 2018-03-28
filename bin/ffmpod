@@ -63,7 +63,23 @@ dtrt-ffmpeg-downscale ../$file:t
 wait
 print duration: $duration
 ssh pod setattr $id duration $duration
-ssh pod setattr $id encoding_status "'DONE $(date)'"
+
+# Testing empty video files
+errorfilesize=false
+for file in *.mp4
+do
+        if [ 0 = $(wc -c < "$file") ]
+        then errorfilesize=true
+        fi
+done
+
+if [ $errorfilesize = true ]
+then
+        ssh pod setattr $id encoding_status "'ERROR $(date)'"
+else
+        ssh pod setattr $id encoding_status "'DONE $(date)'"
+fi
+
 ssh pod disable $id encoding_in_progress
 wait
 
