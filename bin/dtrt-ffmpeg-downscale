@@ -69,8 +69,8 @@ scale () {
             echo "done &" >> launch.zsh
 
 # The streams are encoded 2x2
-# This is due to a limitation somewhere in the driver or in Cuda. Only 2 streams can be encoded at the same time even with 4 graphic cards.
-# Maybe it's because we're using gaming graphic card and not expensive Quadro or Tesla cards
+# This is due to a commercial limitation in the NVIDIA driver. Only 2 streams can be encoded at the same time even with 4 graphic cards.
+# It's because we're using non qualified geforce gaming graphic card and not expensive qualified Quadro or Tesla cards. See nvenc licence for more informations.
             if [[ (($incr -eq 1)) || (($incr -eq 3)) ]]
             then
                 echo "wait" >> launch.zsh
@@ -106,7 +106,7 @@ if {$use_gpu} {
 
 	# Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
-        -gpu 0 -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast  #The selection of the gpu can be done here but it doesn't seem to work
+        -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
         -vf $scale_defnpp=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
