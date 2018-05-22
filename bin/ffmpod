@@ -42,12 +42,10 @@ case "$file:e" {
 }
 
 DEBUG "dtrt-ffmpeg-overview  ../$file:t"
-{ dtrt-ffmpeg-overview  ../$file:t
-    add_overview_for $id overview.png } &
+{ dtrt-ffmpeg-overview  ../$file:t } &
 
 DEBUG "dtrt-ffmpeg-thumbnails  ../$file:t"
-{ dtrt-ffmpeg-thumbnails  ../$file:t
-    set_thumbnails_for $id  thumbnails/{3,6,9}0.png } &
+{ dtrt-ffmpeg-thumbnails  ../$file:t } &
 
 #TODO: blinder en testant l'extention et le mime type
 #(un jour)
@@ -63,6 +61,8 @@ dtrt-ffmpeg-downscale ../$file:t
 wait
 print duration: $duration
 ssh pod setattr $id duration $duration
+add_overview_for $id overview.png
+set_thumbnails_for $id thumbnails/{3,6,9}0.png
 
 # Testing empty video files
 errorfilesize=false
