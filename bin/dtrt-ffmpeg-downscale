@@ -27,10 +27,12 @@ input () {
         input_video_is_h264=true
         encoder+=( -hwaccel cuvid -c:v h264_cuvid -i $filename )
         scale_defnpp="scale_npp"
+        pixfmt="-pixel_format yuv420p"
     } else {
         input_video_is_h264=false
         encoder+=( -i $filename )
         scale_defnpp="scale"
+        pixfmt="-pix_fmt yuv420p"
     }
 }
 
@@ -106,7 +108,7 @@ if {$use_gpu} {
 
 	# Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
-        -c:v h264_nvenc -qmin 25 -qmax 27 -profile:v high -pixel_format yuv420p -preset fast
+        -c:v h264_nvenc $pixfmt -crf 23 -profile:v high -preset fast
         -vf $scale_defnpp=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
