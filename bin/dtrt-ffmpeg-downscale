@@ -108,7 +108,7 @@ if {$use_gpu} {
 
 	# Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
-        -c:v h264_nvenc $pixfmt -crf 23 -profile:v high -preset fast
+        -c:v h264_nvenc $pixfmt -qmin 25 -qmax 27 -profile:v high -preset fast
         -vf $scale_defnpp=$width\:$height
         -codec:a aac -strict -2 -ar 48000 -ac 2 -b:a 160k
         -movflags faststart
