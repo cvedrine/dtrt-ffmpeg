@@ -49,7 +49,8 @@ DEBUG "dtrt-ffmpeg-thumbnails  ../$file:t"
 
 #TODO: blinder en testant l'extention et le mime type
 #(un jour)
-
+usecpu=false
+export FFMPOD_USECPU=false
 DEBUG "dtrt-ffmpeg-downscale ../$file:t"
 
 dtrt-ffmpeg-downscale ../$file:t
@@ -73,9 +74,26 @@ do
         fi
 done
 
+# If there's error with the full GPU mode then do the encoding by using the second slower mode
 if [ $errorfilesize = true ]
-then
-        ssh pod setattr $id encoding_status "'ERROR $(date)'"
+then {
+        rm *.mp4
+        ssh pod setattr $id encoding_status "'FALLBACK $(date)'"
+        if [ $usecpu = false ]
+        then {
+                usecpu=true
+                export FFMPOD_USECPU=true
+                dtrt-ffmpeg-downscale ../$file:t
+                < downscaled while {read height result} {
+                    : ${duration:=$( info_get $result v duration | keep_one_int )}
+                    add_encoding_for $id $height $result &
+                                                        }
+                wait
+                print duration: $duration
+                ssh pod setattr $id duration $duration
+                }
+        fi
+        }
 else
         ssh pod setattr $id encoding_status "'DONE $(date)'"
 fi

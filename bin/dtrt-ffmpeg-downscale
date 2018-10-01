@@ -23,7 +23,7 @@ input () {
     typeset -g input_video_width=$( video_info_get $input width )
     typeset -g input_video_height=$( video_info_get $input height )
 
-    if [[ h264 = $input_video_codec_name ]] {
+    if [[ ((h264 = $input_video_codec_name)) && (($FFMPOD_USECPU = false)) ]] {
         input_video_is_h264=true
         encoder+=( -hwaccel cuvid -c:v h264_cuvid -i $filename )
         scale_defnpp="scale_npp"
