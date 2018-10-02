@@ -25,14 +25,14 @@ input () {
 
     if [[ ((h264 = $input_video_codec_name)) && (($FFMPOD_USECPU = false)) ]] {
         input_video_is_h264=true
-        encoder+=( -hwaccel cuvid -c:v h264_cuvid -i $filename )
-        scale_defnpp="scale_npp"
-        pixfmt="-pixel_format yuv420p"
+	encoder+=( -hwaccel cuvid -c:v h264_cuvid -i $filename )
+	scale_defnpp="scale_npp"
+	pixfmt="-pixel_format yuv420p"
     } else {
-        input_video_is_h264=false
-        encoder+=( -i $filename )
-        scale_defnpp="scale"
-        pixfmt="-pix_fmt yuv420p"
+	input_video_is_h264=false
+	encoder+=( -i $filename )
+	scale_defnpp="scale"
+	pixfmt="-pix_fmt yuv420p"
     }
 }
 
@@ -45,12 +45,12 @@ is_upscale () {
 
 scale () {
     typeset -g width height output
-        encostart=( $encoder )				#Store the beginning of the encode command
-        incr=0								#Variable for the selection of the GPU and the number of the stream to encode
-        echo "#!/bin/zsh" > launch.zsh		#Create the script which will launch the encoding
+	encostart=( $encoder )			#Store the beginning of the encode command
+	incr=0					#Variable for the selection of the GPU and the number of the stream to encode
+	echo "#!/bin/zsh" > launch.zsh		#Create the script which will launch the encoding
 
 # Building of the encoding commands and the file to be launched.
-    for it ($available_sizes) {				
+    for it ($available_sizes) {
         DEBUG "testing size $it"
         width=${it:r} height=${it:e}
         output="$( eval echo $output_template )"
@@ -65,26 +65,26 @@ scale () {
         [[ -f $output && $output -nt $input ]] || {
             scaling_args
             encoder+=( $output )
-            echo "for lp in 1" >> launch.zsh
-            echo "do" >> launch.zsh
-            echo "CUDA_VISIBLE_DEVICES=$incr $encoder" >> launch.zsh	#Select the graphic card and write the encoding command in the file
-            echo "done &" >> launch.zsh
+	    echo "for lp in 1" >> launch.zsh
+	    echo "do" >> launch.zsh
+	    echo "CUDA_VISIBLE_DEVICES=$incr $encoder" >> launch.zsh	#Select the graphic card and write the encoding command in the file
+	    echo "done &" >> launch.zsh
 
 # The streams are encoded 2x2
 # This is due to a commercial limitation in the NVIDIA driver. Only 2 streams can be encoded at the same time even with 4 graphic cards.
 # It's because we're using non qualified geforce gaming graphic card and not expensive qualified Quadro or Tesla cards. See nvenc licence for more informations.
-            if [[ (($incr -eq 1)) || (($incr -eq 3)) ]]
-            then
-                echo "wait" >> launch.zsh
-            fi
-            incr=$((incr + 1))
+	    if [[ (($incr -eq 1)) || (($incr -eq 3)) ]]
+	    then
+		echo "wait" >> launch.zsh
+	    fi
+	    incr=$((incr + 1))
 
 # we only have 4 graphic cards in a node
             if [[ $incr -eq 4 ]]
             then
-            	incr=0
+	       	incr=0
             fi
-            encoder=( $encostart )			#Next encoding command
+	    encoder=( $encostart )		#Next encoding command
         }
     }
     echo "wait" >> launch.zsh
@@ -102,11 +102,11 @@ setopt errexit
 
 # Creation of the ffmpeg command with all the parameters
 if {$use_gpu} {
-    # Accelerate decoding. Not use for the moment because of limitations due to the format of the input file. The aspect must tested and will be done in the future
+	# Accelerate decoding. Not use for the moment because of limitations due to the format of the input file. The aspect must tested and will be done in the future
         # $input_video_is_h264 &&
-	# encoder+=( -hwaccel cuvid )
+    # encoder+=( -hwaccel cuvid )
 
-	# Encoding part of the command ffmpeg
+    # Encoding part of the command ffmpeg
     scaling_args () { encoder+=(
         -c:v h264_nvenc $pixfmt -qmin 25 -qmax 27 -profile:v high -preset fast
         -vf $scale_defnpp=$width\:$height
@@ -123,3 +123,4 @@ if {$use_gpu} {
 input ${1?the video to encode}
 output '${input:t:r}_${width}x${height}.mp4'
 scale always 240 downscale upscale_almost '10%'
+

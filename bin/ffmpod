@@ -1,9 +1,9 @@
 #! /usr/bin/zsh
 
-#SBATCH -p publicgpu   # utiliser la file hpc standard
+#SBATCH -p pod   # utiliser la file hpc standard
 #xxxSBATCH -N 1-1         # nombre de noeuds min-max
 #SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
-#SBATCH --gres=gpu:1   # on exige 1 GPU
+#SBATCH --gres=gpu:4   # on exige 1 GPU
 #SBATCH --exclusive
 
 . pod-ssh.zsh
@@ -32,7 +32,7 @@ case "$file:e" {
         $command
         duration=$( info_get $dest a duration | keep_one_int )
         add_mp3_for $id $dest
-        set_thumbnails_for $id  ~/bin/{3,6,9}0.png
+	set_thumbnails_for $id  ~/bin/{3,6,9}0.png
         print ssh pod setattr $id duration $duration
         ssh pod setattr $id duration $duration
         ssh pod setattr $id encoding_status "'DONE $(date)'"
@@ -67,35 +67,35 @@ set_thumbnails_for $id thumbnails/{3,6,9}0.png
 
 # Testing empty video files
 errorfilesize=false
-for file in *.mp4
+for filesize in *.mp4
 do
-        if [ 0 = $(wc -c < "$file") ]
-        then errorfilesize=true
-        fi
+	if [ 0 = $(wc -c < "$filesize") ]
+	then errorfilesize=true
+	fi
 done
 
 # If there's error with the full GPU mode then do the encoding by using the second slower mode
 if [ $errorfilesize = true ]
 then {
-        rm *.mp4
-        ssh pod setattr $id encoding_status "'FALLBACK $(date)'"
-        if [ $usecpu = false ]
-        then {
-                usecpu=true
-                export FFMPOD_USECPU=true
-                dtrt-ffmpeg-downscale ../$file:t
-                < downscaled while {read height result} {
-                    : ${duration:=$( info_get $result v duration | keep_one_int )}
-                    add_encoding_for $id $height $result &
-                                                        }
-                wait
-                print duration: $duration
-                ssh pod setattr $id duration $duration
-                }
-        fi
-        }
+	rm *.mp4
+	ssh pod setattr $id encoding_status "'FALLBACK $(date)'"
+	if [ $usecpu = false ]
+	then {
+		usecpu=true
+		export FFMPOD_USECPU=true
+		dtrt-ffmpeg-downscale ../$file:t
+		< downscaled while {read height result} {
+		    : ${duration:=$( info_get $result v duration | keep_one_int )}
+		    add_encoding_for $id $height $result &
+							}
+		wait
+		print duration: $duration
+		ssh pod setattr $id duration $duration
+		}
+	fi
+	}
 else
-        ssh pod setattr $id encoding_status "'DONE $(date)'"
+	ssh pod setattr $id encoding_status "'DONE $(date)'"
 fi
 
 ssh pod disable $id encoding_in_progress
