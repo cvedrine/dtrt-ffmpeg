@@ -32,7 +32,7 @@ input () {
 	input_video_is_h264=false
 	encoder+=( -i $filename )
 	scale_defnpp="scale"
-	pixfmt="-pix_fmt yuv420p"
+	pixfmt="-pix_fmt yuv420p -max_muxing_queue_size 20000"
     }
 }
 

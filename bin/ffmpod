@@ -2,7 +2,7 @@
 
 #SBATCH -p pod   # utiliser la file hpc standard
 #xxxSBATCH -N 1-1         # nombre de noeuds min-max
-#SBATCH -t 24:00:00 # temps estimé utilisépar le scheduler slurm
+#SBATCH -t 02:00:00 # temps estimé utilisépar le scheduler slurm
 #SBATCH --gres=gpu:4   # on exige 1 GPU
 #SBATCH --exclusive
 
@@ -24,7 +24,7 @@ mkdir -p videos
 cd videos
 
 case "$file:e" {
-    (wav|mp3|ogg|wma)
+    (wav|WAV|mp3|MP3|Mp3|ogg|OGG|wma|WMA|m4a|M4A)
         dest=$file:t:r.mp3
         command=( ffmpeg -i ../$file -ar 48000 -ac 2 -b:a 128k $dest )
         # command=( lame ../$file -b 128k $dest)
@@ -32,10 +32,12 @@ case "$file:e" {
         $command
         duration=$( info_get $dest a duration | keep_one_int )
         add_mp3_for $id $dest
-	set_thumbnails_for $id  ~/bin/{3,6,9}0.png
         print ssh pod setattr $id duration $duration
         ssh pod setattr $id duration $duration
         ssh pod setattr $id encoding_status "'DONE $(date)'"
+        wait
+        set_thumbnails_for $id  ~/bin/{3,6,9}0.png
+        wait
         ssh pod disable $id encoding_in_progress
         exit
     ;;
@@ -63,7 +65,8 @@ wait
 print duration: $duration
 ssh pod setattr $id duration $duration
 add_overview_for $id overview.png
-set_thumbnails_for $id thumbnails/{3,6,9}0.png
+#set_thumbnails_for $id thumbnails/{3,6,9}0.png
+wait
 
 # Testing empty video files
 errorfilesize=false
@@ -98,6 +101,9 @@ else
 	ssh pod setattr $id encoding_status "'DONE $(date)'"
 fi
 
+wait
+set_thumbnails_for $id thumbnails/{3,6,9}0.png
+wait
 ssh pod disable $id encoding_in_progress
 wait
 
@@ -105,7 +111,7 @@ wait
 cd
 daysafter="+1"     #How many days after last modification
 if [ $(whoami) = "pod" ]
-then daysafter="+7"	#Seven days after in production
+then daysafter="+5"	#Seven days after in production
 fi
 find ./pod.* -maxdepth 0 -mtime $daysafter -print0 | xargs -0 rm -rf      #Delete old working folders
 
